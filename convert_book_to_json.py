@@ -12,7 +12,7 @@ BOOK_PATH = BASE_DIR / "book.md"
 SCRIPT_OUTPUT_PATH = BASE_DIR / "book.js"
 
 SECTION_RE = re.compile(r"^##\s+(\d+)\s*$", re.MULTILINE)
-TARGET_RE = re.compile(r"(?:前\s*往|到|去|进入)\s*(?:\*\*)?\^?\(?\s*(\d{1,3})\s*\)?(?:\*\*)?")
+TARGET_RE = re.compile(r"(?:前\s*往|翻\s*到|进入)\s*(?:\*\*)?\^?\(?\s*(\d{1,3})\s*\)?(?:\*\*)?")
 ANY_TARGET_RE = re.compile(r"(?:\*\*)?\^?\(?\s*(\d{1,3})\s*\)?(?:\*\*)?")
 
 ARTIFACT_PATTERNS = [
@@ -76,10 +76,12 @@ def sentence_like_chunks(paragraph: str) -> list[str]:
 
 def choice_label(text: str, target: int) -> str:
     text = normalize_markup(text)
-    text = re.sub(r"[：:，,；;。]?\s*(?:现在)?(?:请)?(?:前\s*往|到|去|进入)\s*" + str(target) + r"\s*[。.]?$", "", text)
-    text = re.sub(r"[：:，,；;。]?\s*(?:现在)?(?:请)?(?:前\s*往|到|去|进入)\s*\(?\s*" + str(target) + r"\s*\)?\s*[。.]?$", "", text)
+    text = re.sub(r"[：:，,；;。]?\s*(?:现在)?(?:请)?(?:前\s*往|翻\s*到|进入)\s*" + str(target) + r"\s*[。.]?$", "", text)
+    text = re.sub(r"[：:，,；;。]?\s*(?:现在)?(?:请)?(?:前\s*往|翻\s*到|进入)\s*\(?\s*" + str(target) + r"\s*\)?\s*[。.]?$", "", text)
     text = re.sub(r"^(?:现在|否则)?你可以[:：]", "", text)
-    text = text.strip(" ：:，,；;。-—")
+    if "如果" in text and not text.startswith("如果"):
+        text = text[text.rfind("如果"):]
+    text = text.strip(" ：:，,；;。-—”)“\"")
     return text or "继续"
 
 
@@ -210,7 +212,7 @@ def main() -> None:
         },
         "schema": {
             "section.body": "去掉页眉、页码、代码围栏和跳转语句后的段落，适合直接显示。",
-            "section.choices": "从“前往 N”等跳转语句提取的网页按钮数据。",
+            "section.choices": "从“前往 N”“翻到 N”等跳转语句提取的网页按钮数据。",
             "section.text": "清理后的完整段落文本，保留原跳转语句，便于校对。",
         },
         "intro": parse_preface(text, first_section.start()),
