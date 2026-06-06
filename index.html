@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>向火独行 | Alone Against the Flames</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <div id="app" v-cloak>
+      <header class="site-header">
+        <div>
+          <p class="eyebrow">Alone Against the Flames</p>
+          <h1>{{ book?.title || '向火独行' }}</h1>
+        </div>
+        <nav class="top-actions" aria-label="游戏操作">
+          <button class="ghost" type="button" @click="goBack" :disabled="!canGoBack">返回</button>
+          <button class="ghost" type="button" @click="restart">重新开始</button>
+        </nav>
+      </header>
+
+      <main class="layout">
+        <section class="card story-card" aria-live="polite">
+          <div v-if="loading" class="state-message">正在读取游戏数据……</div>
+          <div v-else-if="error" class="state-message error">
+            <h2>无法载入游戏数据</h2>
+            <p>{{ error }}</p>
+            <p>请确认 <code>book.js</code>、<code>app.js</code> 和 <code>index.html</code> 位于同一目录。</p>
+          </div>
+          <template v-else-if="currentNode">
+            <div class="section-meta">
+              <span>{{ currentKey === 'intro' ? '前言' : `段落 ${currentNode.id}` }}</span>
+              <span v-if="currentNode.ending" class="ending-badge">结局</span>
+            </div>
+
+            <article class="story-text">
+              <p v-for="(paragraph, index) in displayParagraphs" :key="index">{{ paragraph }}</p>
+            </article>
+
+            <div v-if="currentNode.choices?.length" class="choices" aria-label="选项">
+              <button
+                v-for="choice in currentNode.choices"
+                :key="`${currentKey}-${choice.target}-${choice.label}`"
+                type="button"
+                class="choice-button"
+                @click="choose(choice.target)"
+              >
+                <span>{{ choice.label }}</span>
+                <strong>前往 {{ choice.target }}</strong>
+              </button>
+            </div>
+            <div v-else class="ending-actions">
+              <p>本段没有后续选项。</p>
+              <button type="button" class="primary" @click="restart">重新开始</button>
+            </div>
+          </template>
+        </section>
+
+        <aside class="sidebar">
+          <section class="card compact-card">
+            <h2>快速跳转</h2>
+            <form class="jump-form" @submit.prevent="jumpToInput">
+              <label for="jump">段落编号</label>
+              <div>
+                <input id="jump" v-model.trim="jumpInput" inputmode="numeric" pattern="[0-9]*" placeholder="1-270" />
+                <button type="submit">前往</button>
+              </div>
+            </form>
+          </section>
+
+          <section class="card compact-card">
+            <h2>进度</h2>
+            <p>当前位置：<strong>{{ currentKey === 'intro' ? '前言' : currentKey }}</strong></p>
+            <p>已访问：<strong>{{ visitedCount }}</strong> 个段落</p>
+            <button class="ghost full" type="button" @click="clearSave">清除存档</button>
+          </section>
+
+          <section class="card compact-card">
+            <h2>人物卡</h2>
+            <p class="hint">需要创建或记录调查员时，可以打开外部工具。</p>
+            <a class="tool-link" href="https://www.cthulhuclub.com/charSheetGenerator/" target="_blank" rel="noopener noreferrer">
+              打开人物卡生成器
+            </a>
+          </section>
+
+          <section class="card compact-card">
+            <h2>掷骰助手</h2>
+            <p class="hint">遇到检定时可在这里快速掷骰。</p>
+            <div class="dice-grid">
+              <button type="button" @click="roll(100)">D100</button>
+              <button type="button" @click="roll(6)">D6</button>
+              <button type="button" @click="roll(4)">D4</button>
+            </div>
+            <p v-if="diceResult" class="dice-result">{{ diceResult }}</p>
+          </section>
+
+          <section class="card compact-card history-card">
+            <h2>历史</h2>
+            <ol v-if="history.length">
+              <li v-for="(item, index) in [...history].reverse().slice(0, 12)" :key="`${item}-${index}`">
+                {{ item === 'intro' ? '前言' : `段落 ${item}` }}
+              </li>
+            </ol>
+            <p v-else class="hint">还没有历史记录。</p>
+          </section>
+        </aside>
+      </main>
+    </div>
+
+    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+    <script src="./book.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>
